@@ -88,7 +88,6 @@ Example prompt:
 
 ## Notes / limitations
 
-- This project is intentionally simple (no public REST API layer, no Alembic migrations).
 - Time/date picker UI format (AM/PM vs 24h) depends on browser/OS locale.
 
 ## License
