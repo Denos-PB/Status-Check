@@ -1,0 +1,16 @@
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      FRONTEND_DIR: /frontend
+    volumes:
+      - ./backend:/app
+      - ./frontend:/frontend
+      - sqlite_data:/app/data
+
+volumes:
+  sqlite_data:
