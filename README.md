@@ -1,66 +1,95 @@
 # Status Check
 
-Test project: shared commitment calendar with login, CRUD, statuses, and filters.
+Status Check is a lightweight team commitment calendar built as a test assignment.
+It includes authentication, monthly planning, commitment CRUD, status tracking, filtering, and optional AI-assisted form fill.
 
-## Stack
+## What the app does
 
-- **Backend:** FastAPI, SQLAlchemy 2.0 (async), SQLite, Jinja2
-- **Frontend:** Jinja2 templates, TailwindCSS (CDN)
-- **Infra:** Docker (optional)
+- Login/logout with cookie-based auth (no registration page)
+- Monthly calendar view with commitments grouped by `deadline`
+- Create, edit, delete commitments
+- Quick status updates: `to_check`, `expired`, `done`, `not_actual`, `ideas_backlog`
+- Filters by project and reviewer
+- Automatic `expired` status refresh for overdue items
+- Optional AI prefill for the new commitment form
 
-## Structure
+## Tech stack
 
+- **Backend:** FastAPI, SQLAlchemy 2.0 async, SQLite
+- **Frontend:** Jinja2 templates, HTMX, TailwindCSS (CDN)
+- **Other:** OpenAI SDK (optional), Docker Compose (optional)
+
+## Project structure
+
+```text
+backend/
+  app/
+    api/routes/web.py          # HTML routes
+    api/dependencies/auth.py   # auth dependencies
+    core/                      # config, db init, security
+    models/                    # User, Project, Commitment
+    schemas/                   # form/request/response schemas
+    services/                  # auth, commitments, AI parsing
+frontend/
+  templates/                   # Jinja pages/components
+  static/                      # JS/CSS
 ```
-backend/app/
-  api/routes/       # HTML routes (web.py)
-  api/dependencies/ # auth (cookie session)
-  core/             # config, database (+ seed)
-  models/           # User, Project, Commitment (+ statuses)
-  schemas/          # auth + commitment forms
-  services/         # auth_service, commitment_service
-frontend/templates/
-```
 
-## Quick start
+## Local run
 
 ```bash
 cd backend
-source venv/bin/activate
+python3 -m venv .venv
+source .venv/bin/activate
 pip install -r requirements.txt
 export FRONTEND_DIR=../frontend
 uvicorn app.main:app --reload
 ```
 
-Open http://localhost:8000 — DB file `backend/data/commitments.db` is created automatically.
+Open: [http://localhost:8000](http://localhost:8000)
 
-If you had an older database schema, delete `backend/data/commitments.db` and restart.
+On first start the app creates `backend/data/commitments.db` and seeds demo data.
+If schema changed between versions, remove `backend/data/commitments.db` and restart.
 
-**Demo login:** `user@example.com` / `user123`  
-Unauthenticated visits to `/` redirect to `/login`.
+### Demo login
 
-## Docker
+- Email: `user@example.com`
+- Password: `user123`
+
+Unauthenticated access to `/` is redirected to `/login`.
+
+## Docker run (optional)
 
 ```bash
 docker compose up --build
 ```
 
-## Features (requirements)
+The app will be available at [http://localhost:8000](http://localhost:8000).
 
-- Login / logout (shared SQLite database)
-- Month calendar with commitments on **deadline**
-- Create, edit, change status, delete commitments
-- Statuses: `to_check`, `expired`, `done`, `not_actual`, `ideas_backlog`
-- Filters: **project**, **reviewer**
-- `expired` is applied when loading the calendar (deadline passed, not done/not actual)
-- **AI fill**: on "New commitment", describe a task in plain language -> form is pre-filled (requires `OPENAI_API_KEY`)
+## Configuration
 
-## Optional `.env`
+Environment variables are optional.
 
-Not required. Override `SECRET_KEY`, `DATABASE_URL`, or set `OPENAI_API_KEY` for AI fill.
+Common settings:
+- `FRONTEND_DIR` (default: `../frontend`)
+- `DATABASE_URL` (default: local SQLite file)
+- `SECRET_KEY`
+- `OPENAI_API_KEY` (required only for AI prefill)
+- `OPENAI_MODEL` (default: `gpt-4o-mini`)
 
-**AI demo prompt** (after login -> New commitment):
+## AI prefill
+
+On **New commitment**, describe task details in plain language and click **Fill with AI**.
+The app parses title, people, project, status, and deadline suggestion.
+
+Example prompt:
 
 > Review API with Demo Reviewer by Friday, project Platform
+
+## Notes / limitations
+
+- This project is intentionally simple (no public REST API layer, no Alembic migrations).
+- Time/date picker UI format (AM/PM vs 24h) depends on browser/OS locale.
 
 ## License
 
