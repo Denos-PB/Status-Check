@@ -17,7 +17,7 @@ It includes authentication, monthly planning, commitment CRUD, status tracking, 
 
 - **Backend:** FastAPI, SQLAlchemy 2.0 async, SQLite
 - **Frontend:** Jinja2 templates, HTMX, TailwindCSS (CDN)
-- **Other:** OpenAI SDK (optional), Docker Compose (optional)
+- **Other:** DeepSeek/Claude AI integration (optional), Docker Compose (optional)
 
 ## Project structure
 
@@ -74,8 +74,13 @@ Common settings:
 - `FRONTEND_DIR` (default: `../frontend`)
 - `DATABASE_URL` (default: local SQLite file)
 - `SECRET_KEY`
-- `OPENAI_API_KEY` (required only for AI prefill)
-- `OPENAI_MODEL` (default: `gpt-4o-mini`)
+- `DEEPSEEK_API_KEY` (required only for AI prefill)
+- `DEEPSEEK_MODEL` (default: `deepseek-chat`)
+- `DEEPSEEK_BASE_URL` (default: `https://api.deepseek.com/v1`)
+
+Optional fallback:
+- `CLAUDE_API_KEY`
+- `CLAUDE_MODEL` (default: `claude-3-5-sonnet-latest`)
 
 ## AI prefill
 

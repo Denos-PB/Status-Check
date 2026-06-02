@@ -2,7 +2,7 @@ import json
 import logging
 from datetime import UTC, datetime
 
-from openai import AsyncOpenAI
+import httpx
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import get_settings
@@ -22,13 +22,20 @@ class AIService:
 
     @property
     def is_available(self) -> bool:
-        return bool(self.settings.openai_api_key)
+        return bool(self.settings.deepseek_api_key or self.settings.claude_api_key)
+
+    @property
+    def _ai_provider_label(self) -> str:
+        return "DeepSeek" if self.settings.deepseek_api_key else "Claude"
 
     async def parse_commitment_prompt(
         self, prompt: str
     ) -> tuple[CommitmentFormPrefill | None, str | None]:
         if not self.is_available:
-            return None, "AI is not configured. Set OPENAI_API_KEY in your environment."
+            return (
+                None,
+                "AI is not configured. Set DEEPSEEK_API_KEY (recommended) or CLAUDE_API_KEY in your environment.",
+            )
 
         prompt = prompt.strip()
         if not prompt:
@@ -72,20 +79,59 @@ Available users:
 {user_lines}
 """
 
-        client = AsyncOpenAI(api_key=self.settings.openai_api_key)
-        response = await client.chat.completions.create(
-            model=self.settings.openai_model,
-            messages=[
-                {"role": "system", "content": system},
-                {"role": "user", "content": prompt},
-            ],
-            response_format={"type": "json_object"},
-            temperature=0.2,
-        )
-        raw = response.choices[0].message.content
+        if self.settings.deepseek_api_key:
+            raw = await self._call_deepseek(system, prompt)
+        else:
+            raw = await self._call_claude(system, prompt)
         if not raw:
             raise ValueError("Empty response from model")
         return AICommitmentDraft.model_validate(json.loads(raw))
+
+    async def _call_deepseek(self, system: str, prompt: str) -> str:
+        headers = {
+            "Authorization": f"Bearer {self.settings.deepseek_api_key}",
+            "Content-Type": "application/json",
+        }
+        payload = {
+            "model": self.settings.deepseek_model,
+            "messages": [
+                {"role": "system", "content": system},
+                {"role": "user", "content": prompt},
+            ],
+            "response_format": {"type": "json_object"},
+            "temperature": 0.2,
+        }
+        async with httpx.AsyncClient(timeout=45.0) as client:
+            response = await client.post(
+                f"{self.settings.deepseek_base_url.rstrip('/')}/chat/completions",
+                headers=headers,
+                json=payload,
+            )
+            response.raise_for_status()
+            body = response.json()
+        return body["choices"][0]["message"]["content"] or ""
+
+    async def _call_claude(self, system: str, prompt: str) -> str:
+        try:
+            from anthropic import AsyncAnthropic  # lazy import for optional dependency
+        except ImportError as exc:
+            raise RuntimeError(
+                "Claude support requires the 'anthropic' package. Install dependencies from requirements.txt."
+            ) from exc
+
+        client = AsyncAnthropic(api_key=self.settings.claude_api_key)
+        response = await client.messages.create(
+            model=self.settings.claude_model,
+            system=(
+                f"{system}\n\n"
+                "Return ONLY valid JSON object, with no markdown and no prose."
+            ),
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.2,
+            max_tokens=700,
+        )
+        text_chunks = [b.text for b in response.content if getattr(b, "type", "") == "text"]
+        return "".join(text_chunks).strip()
 
     def _to_prefill(
         self, draft: AICommitmentDraft, projects: list, users: list[User]

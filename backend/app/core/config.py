@@ -33,8 +33,13 @@ class Settings(BaseSettings):
 
     scheduler_interval_minutes: int = 5
 
-    openai_api_key: str = ""
-    openai_model: str = "gpt-4o-mini"
+    # AI providers
+    deepseek_api_key: str = ""
+    deepseek_model: str = "deepseek-chat"
+    deepseek_base_url: str = "https://api.deepseek.com/v1"
+
+    claude_api_key: str = ""
+    claude_model: str = "claude-3-5-sonnet-latest"
 
     frontend_dir: Path = Path(
         os.getenv("FRONTEND_DIR", str(_DEFAULT_FRONTEND))
