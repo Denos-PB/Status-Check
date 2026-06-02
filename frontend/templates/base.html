@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Status Check{% endblock %}</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/htmx.org@2.0.4"></script>
+  <link rel="stylesheet" href="/static/css/app.css">
+  {% block head %}{% endblock %}
+</head>
+<body class="bg-slate-50 text-slate-900 min-h-screen">
+  <nav class="bg-slate-900 text-white shadow">
+    <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
+      <a href="/" class="font-semibold text-lg tracking-tight">Status Check</a>
+      <div class="flex items-center gap-4 text-sm">
+        {% if user %}
+          <span class="text-slate-300">{{ user.full_name }}</span>
+          <a href="/commitments/new" class="bg-indigo-500 hover:bg-indigo-600 px-3 py-1.5 rounded">+ New</a>
+          <a href="/logout" class="text-slate-300 hover:text-white">Logout</a>
+        {% else %}
+          <a href="/login" class="text-slate-300 hover:text-white">Login</a>
+        {% endif %}
+      </div>
+    </div>
+  </nav>
+  <main class="max-w-7xl mx-auto px-4 py-6">
+    {% block content %}{% endblock %}
+  </main>
+  <script src="/static/js/calendar.js"></script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

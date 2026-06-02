@@ -1,0 +1,21 @@
+{% macro status_badge(status) %}
+<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium text-white {{ status_colors.get(status, 'bg-gray-500') }}">
+  {{ status.replace('_', ' ') }}
+</span>
+{% endmacro %}
+
+{% macro commitment_card(c) %}
+<a href="/commitments/{{ c.id }}"
+   class="block text-xs p-1.5 mb-1 rounded border-l-4 {{ status_borders.get(c.status.value, 'border-gray-400') }} bg-white shadow-sm hover:shadow transition">
+  <span class="font-medium truncate block">{{ c.title }}</span>
+  {% if c.deadline %}
+  <span class="text-slate-500">
+    {% if c.deadline.hour or c.deadline.minute %}
+    {{ c.deadline.strftime('%H:%M') }}
+    {% else %}
+    {{ c.deadline.strftime('%d.%m') }}
+    {% endif %}
+  </span>
+  {% endif %}
+</a>
+{% endmacro %}
