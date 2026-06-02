@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+{% block title %}{% if commitment %}Edit{% else %}New{% endif %} commitment - Status Check{% endblock %}
+{% block content %}
+<div class="max-w-2xl mx-auto">
+  <h1 class="text-2xl font-bold mb-6">{% if commitment %}Edit commitment{% else %}New commitment{% endif %}</h1>
+
+  {% if ai_message %}
+  <div class="mb-4 p-3 bg-green-50 text-green-800 rounded border border-green-200 text-sm">{{ ai_message }}</div>
+  {% endif %}
+  {% if error %}
+  <div class="mb-4 p-3 bg-red-50 text-red-700 rounded border border-red-200 text-sm">{{ error }}</div>
+  {% endif %}
+
+  {% if not commitment %}
+  <div class="bg-indigo-50 border border-indigo-100 rounded-xl p-5 mb-6">
+    <h2 class="font-semibold text-indigo-900 mb-2">Fill with AI</h2>
+    <p class="text-sm text-indigo-800 mb-3">
+      Describe the commitment in plain language — AI will fill the form below.
+    </p>
+    {% if ai_available %}
+    <form method="post" action="/commitments/new/ai-fill" class="space-y-3">
+      <textarea name="prompt" rows="3" required
+                placeholder="e.g. Review API with Demo Reviewer by Friday, project Platform"
+                class="w-full border border-indigo-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">{{ ai_prompt }}</textarea>
+      <button type="submit"
+              class="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium px-4 py-2 rounded-lg">
+        Fill with AI
+      </button>
+    </form>
+    {% else %}
+    <p class="text-sm text-amber-800 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+      Set <code class="text-xs">OPENAI_API_KEY</code> in your environment to enable AI fill.
+    </p>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  {% set p = prefill %}
+  <form method="post"
+        action="{% if commitment %}/commitments/{{ commitment.id }}/edit{% else %}/commitments/new{% endif %}"
+        class="bg-white rounded-xl shadow p-6 space-y-4">
+    <div>
+      <label class="block text-sm font-medium mb-1" for="title">Title *</label>
+      <input type="text" id="title" name="title" required maxlength="500"
+             value="{% if commitment %}{{ commitment.title }}{% elif p %}{{ p.title }}{% endif %}"
+             class="w-full border rounded-lg px-3 py-2">
+    </div>
+    <div>
+      <label class="block text-sm font-medium mb-1" for="description">Description</label>
+      <textarea id="description" name="description" rows="4"
+                class="w-full border rounded-lg px-3 py-2">{% if commitment and commitment.description %}{{ commitment.description }}{% elif p %}{{ p.description }}{% endif %}</textarea>
+    </div>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div>
+        <label class="block text-sm font-medium mb-1" for="project_id">Project</label>
+        <select id="project_id" name="project_id" class="w-full border rounded-lg px-3 py-2">
+          <option value="">—</option>
+          {% for proj in projects %}
+          <option value="{{ proj.id }}"
+            {% if commitment and commitment.project_id == proj.id %}selected
+            {% elif p and p.project_id == proj.id %}selected{% endif %}>{{ proj.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div>
+        <label class="block text-sm font-medium mb-1" for="status">Status</label>
+        <select id="status" name="status" class="w-full border rounded-lg px-3 py-2">
+          {% for val, label in status_choices %}
+          <option value="{{ val }}"
+            {% if commitment and commitment.status.value == val %}selected
+            {% elif p and p.status == val %}selected
+            {% elif not commitment and not p and val == 'to_check' %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div>
+        <label class="block text-sm font-medium mb-1" for="executor_id">Executor</label>
+        <select id="executor_id" name="executor_id" class="w-full border rounded-lg px-3 py-2">
+          <option value="">—</option>
+          {% for u in users %}
+          <option value="{{ u.id }}"
+            {% if commitment and commitment.executor_id == u.id %}selected
+            {% elif p and p.executor_id == u.id %}selected{% endif %}>{{ u.full_name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div>
+        <label class="block text-sm font-medium mb-1" for="reviewer_id">Reviewer</label>
+        <select id="reviewer_id" name="reviewer_id" class="w-full border rounded-lg px-3 py-2">
+          <option value="">—</option>
+          {% for u in users %}
+          <option value="{{ u.id }}"
+            {% if commitment and commitment.reviewer_id == u.id %}selected
+            {% elif p and p.reviewer_id == u.id %}selected{% endif %}>{{ u.full_name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
+    <div>
+      <label class="block text-sm font-medium mb-1" for="deadline">Deadline (date or datetime)</label>
+      <input type="datetime-local" id="deadline" name="deadline"
+             value="{% if commitment and commitment.deadline %}{{ commitment.deadline.strftime('%Y-%m-%dT%H:%M') }}{% elif p %}{{ p.deadline }}{% endif %}"
+             class="w-full border rounded-lg px-3 py-2">
+      <p class="text-xs text-slate-500 mt-1">Leave empty for ideas backlog. Cannot be in the past when creating.</p>
+    </div>
+    <div class="flex gap-3 pt-2">
+      <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2 rounded-lg font-medium">Save</button>
+      <a href="{% if commitment %}/commitments/{{ commitment.id }}{% else %}/{% endif %}" class="px-6 py-2 border rounded-lg hover:bg-slate-50">Cancel</a>
+    </div>
+  </form>
+</div>
+{% endblock %}
